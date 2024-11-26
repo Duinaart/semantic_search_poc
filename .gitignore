@@ -25,4 +25,4 @@ __pycache__/
 *.log
 
 # Large files
-universe_reference_data.json
+*.json
