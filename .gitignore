@@ -1,24 +1,25 @@
+# Virtual Environment
+venv-semantic-search-poc/
+venv/
+ENV/
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 
-# Virtual Environment
-venv-semantic-search-poc/
-venv/
-ENV/
-env/
-
-# IDE settings
+# IDE
 .idea/
 .vscode/
 *.swp
-.DS_Store
 
 # Environment variables
 .env
 .env.local
 
-# JSON data files (if you want to exclude them)
-# *.json
+# OS
+.DS_Store
+
+# Logs
+*.log
