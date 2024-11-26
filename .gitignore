@@ -23,3 +23,6 @@ __pycache__/
 
 # Logs
 *.log
+
+# Large files
+universe_reference_data.json
