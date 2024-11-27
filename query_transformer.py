@@ -83,6 +83,7 @@ class QueryTransformer:
         Query: "{}"
         
         Transform this natural language query into a valid Elasticsearch query using the provided schema.
+        If the prompt is a question, don't make a query but answer to the user.
         Add an answer/description in the answer section, so that the user knows why/how the query was created.
         Return only the JSON query structure that matches the Pydantic model.
         """.format(natural_query)
@@ -109,12 +110,12 @@ class QueryTransformer:
                         "properties": {{
                         "analyst_consensus_price_target": {{
                             "properties": {{
-                            "currency": {{ "type": "keyword" }},
-                            "price": {{ "type": "float" }},
-                            "nr_analysts": {{ "type": "integer" }}
+                            "currency": {{ "type": "keyword" }},                    # ISO3 currency code (eg EUR)
+                            "price": {{ "type": "float" }},                         # the price target
+                            "nr_analysts": {{ "type": "integer" }}                  # the amount of analysts that are linked to the price target
                             }}
                         }},
-                        "analyst_recommendation_count": {{ "type": "integer" }},
+                    "analyst_recommendation_count": {{ "type": "integer" }},        # the amount of analysts that have provided a recommendation   
                         "analyst_recommendations": {{
                             "properties": {{
                             "BUY": {{ "type": "integer" }},
@@ -123,35 +124,35 @@ class QueryTransformer:
                             "UNDERPERFORM": {{ "type": "integer" }}
                             }}
                         }},
-                        "analyst_upward_potential": {{ "type": "float" }},
-                        "currency": {{ "type": "keyword" }},
-                        "debt_equity_latest": {{ "type": "float" }},
-                        "description": {{ "type": "text" }},
-                        "div_yield_current": {{ "type": "float" }},
-                        "div_yield_current_fy": {{ "type": "float" }},
-                        "div_yield_ttm": {{ "type": "float" }},
-                        "dividend_payout_ratio_ttm": {{ "type": "float" }},
-                        "eps_growth_last_5y": {{ "type": "float" }},
-                        "eps_ttm": {{ "type": "float" }},
-                        "equity_industry": {{ "type": "keyword" }},
-                        "equity_sector": {{ "type": "keyword" }},
-                        "financial_health_stars": {{ "type": "integer" }},
-                        "growth_stars": {{ "type": "integer" }},
-                        "isin": {{ "type": "keyword" }},
-                        "market_cap": {{ "type": "float" }},
-                        "momentum_stars": {{ "type": "integer" }},
-                        "name": {{ "type": "text" }},
-                        "net_profit_margin_ttm": {{ "type": "float" }},
-                        "number_of_employees": {{ "type": "integer" }},
-                        "price_book_latest": {{ "type": "float" }},
-                        "price_earnings_ex_extra_ttm": {{ "type": "float" }},
-                        "price_sales_ttm": {{ "type": "float" }},
-                        "profitability_stars": {{ "type": "integer" }},
-                        "roe_ttm": {{ "type": "float" }},
-                        "size_label": {{ "type": "keyword" }},
-                        "stability_stars": {{ "type": "integer" }},
-                        "value_growth_label": {{ "type": "keyword" }},
-                        "value_stars": {{ "type": "integer" }}
+                        "analyst_upward_potential": {{ "type": "float" }},          # the upwards potential from the latest price to the price target
+                        "currency": {{ "type": "keyword" }},                        # ISO3 currency code (eg EUR)
+                        "debt_equity_latest": {{ "type": "float" }},                # the debt to equity ratio
+                        "description": {{ "type": "text" }},                        # the company description, describing what the company actually does
+                        "div_yield_current": {{ "type": "float" }},                 # the latest dividend divided by the latest stock price
+                        "div_yield_current_fy": {{ "type": "float" }},              # the latest annualized dividend, divided by the latest stock price
+                        "div_yield_ttm": {{ "type": "float" }},                     # the dividend yield from dividends paid out in the last 12 months
+                        "dividend_payout_ratio_ttm": {{ "type": "float" }},         # the ratio of net earnings that has been paid out in the form of dividends
+                        "eps_growth_last_5y": {{ "type": "float" }},                # the earnings per share growth of the last 5 years
+                        "eps_ttm": {{ "type": "float" }},                           # the earnings per share of the last 12 months
+                        "equity_industry": {{ "type": "keyword" }},                 # the industry of the company. This is the equivalent of GICS level 3
+                        "equity_sector": {{ "type": "keyword" }},                   # the sector the company. Can be one  of: [BASIC_MATERIALS, CONSUMER_CYCLICAL, FINANCIAL_SERVICES, REAL_ESTATE, COMMUNICATION_SERVICES, ENERGY, INDUSTRIALS, TECHNOLOGY, CONSUMER_DEFENSIVE, HEALTHCARE, UTILITIES, EDUCATION, OTHER]
+                        "financial_health_stars": {{ "type": "integer" }},          # Quintile score for financial health relative to the sector. 1 is worst, 5 is best
+                        "growth_stars": {{ "type": "integer" }},                    # Quintile score for growth relative to the sector. 1 is worst, 5 is best
+                        "isin": {{ "type": "keyword" }},                            # ISIN identifier of the stock
+                        "market_cap": {{ "type": "float" }},                        # Market capitalization of the stock, in currency
+                        "momentum_stars": {{ "type": "integer" }},                  # Quintile score for momentum relative to the sector. 1 is worst, 5 is best
+                        "name": {{ "type": "text" }},                               # Instrument/company name
+                        "net_profit_margin_ttm": {{ "type": "float" }},             # Net profit margin of the company, for the last 12 months
+                        "number_of_employees": {{ "type": "integer" }},             # Number of employees in the company
+                        "price_book_latest": {{ "type": "float" }},                 # Price to book ratio for the last fiscal years
+                        "price_earnings_ex_extra_ttm": {{ "type": "float" }},       # Price to earnings ratio for the last twelve months
+                        "price_sales_ttm": {{ "type": "float" }},                   # Price to sales ratio for the last twelve months
+                        "profitability_stars": {{ "type": "integer" }},             # Quintile score for profitability relative to the sector. 1 is worst, 5 is best
+                        "roe_ttm": {{ "type": "float" }},                           # Return on equity number for the last 12 months
+                        "size_label": {{ "type": "keyword" }},                      # Label describing the market cap. Can be one of: [SMALL, LARGE]
+                        "stability_stars": {{ "type": "integer" }},                 # Quintile score for financial stability relative to the sector. 1 is worst, 5 is best
+                        "value_growth_label": {{ "type": "keyword" }},              # Label describing the market cap. Can be one of: [VALUE, GROWTH]
+                        "value_stars": {{ "type": "integer" }}                      # Quintile score for value relative to the sector. 1 is worst, 5 is best
                         }}
                     }}
                     ```
@@ -209,7 +210,7 @@ class QueryTransformer:
         except Exception as e:
             logger.error(f"Error in query transformation: {e}")
             return {"query": {"match_all": {}}}
-
+        
 def main():
     settings = Settings()
     transformer = QueryTransformer(settings)
@@ -226,13 +227,19 @@ def main():
             print("Please enter a valid query")
             continue
             
-        es_query = transformer.transform(user_query)
-        print(json.dumps(es_query, indent=2))
+        response = transformer.transform(user_query)
+        
+        # Print the natural language explanation
+        print("\nExplanation:")
+        print(response["answer"])
+        
+        # Print the Elasticsearch query
+        print("\nElasticsearch Query:")
+        print(json.dumps(response["es_query"], indent=2))
 
 if __name__ == "__main__":
     main()
 
 
 # To Do: add the enum values and specifications to the system prompt
-# To Do: make the gpt add the description as to why he created the prompt
 # To Do: add another message where the last query was returned, so that the user can ask follow-up filtering requests

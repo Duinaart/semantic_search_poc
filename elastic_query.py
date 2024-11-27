@@ -43,12 +43,19 @@ def main():
             print("Please enter a valid query")
             continue
             
-        es_query = transformer.transform(user_query)
-        print("\nElasticsearch Query:")
-        print(json.dumps(es_query, indent=2))
+        # Get transformed query and explanation
+        response = transformer.transform(user_query)
         
-        print("\nSearching...")
-        results = send_to_elasticsearch(es_query)
+        # Print description
+        print("\nDescription:")
+        print(response["answer"])
+        
+        # Print Elasticsearch query
+        print("\nElasticsearch Query:")
+        print(json.dumps(response["es_query"], indent=2))
+        
+        # print("\nSearching...")
+        results = send_to_elasticsearch(response["es_query"])
         
         if results:
             hits = results.get('hits', {}).get('hits', [])

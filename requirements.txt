@@ -1,0 +1,7 @@
+dash
+flask
+werkzeug
+click>=8.0
+markupsafe
+python-dotenv
+requests
