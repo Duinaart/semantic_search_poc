@@ -1,77 +1,114 @@
-import dash
-from dash import html, dcc, callback, Output, Input, State
+# app.py
+from dash import Dash, html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
-from search_poc_openai import (
-    initialize_search,
-    search_instruments
-)
+from query_transformer import QueryTransformer, Settings
+from elastic_search import send_to_elasticsearch
+import json
 
-# Initialize search functionality
-collection = initialize_search()
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# Initialize Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-# Layout
 app.layout = dbc.Container([
-    html.H1("Financial Instrument Search", className="my-4"),
+    html.H1("Semantic Stock Search", className="mb-4"),
     
-    # Search Section
     dbc.Row([
         dbc.Col([
             dbc.Input(
-                id='search-input',
-                placeholder='e.g., growth companies in industrial sector with positive ROE',
-                type='text',
-                className="mb-2"
+                id="query-input",
+                placeholder="e.g., tech companies with high ROE",
+                type="text",
+                className="mb-3"
             ),
-            dbc.Button("Search", id='search-button', color="primary", className="mb-4")
+            dbc.Button("Search", id="search-button", color="primary", className="mb-3"),
+            
+            # Query display
+            html.H4("Elasticsearch Query"),
+            dcc.Loading(
+                id="query-loading",
+                children=[
+                    dbc.Card(
+                        dbc.CardBody(
+                            html.Pre(id="query-display")
+                        )
+                    )
+                ]
+            ),
+            
+            # Results
+            html.H4("Results", className="mt-4"),
+            dcc.Loading(
+                id="results-loading",
+                children=[
+                    html.Div(id="results-display")
+                ]
+            )
         ])
-    ]),
-    
-    # Results Section
-    html.Div(id='search-results')
-])
+    ])
+], fluid=True)
 
-@callback(
-    Output('search-results', 'children'),
-    Input('search-button', 'n_clicks'),
-    State('search-input', 'value'),
+@app.callback(
+    [Output("query-display", "children"),
+     Output("results-display", "children")],
+    [Input("search-button", "n_clicks")],
+    [State("query-input", "value")],
     prevent_initial_call=True
 )
 def update_results(n_clicks, query):
     if not query:
-        return html.Div("Please enter a search query")
+        return "", ""
     
-    # Reinitialize collection for each search
-    collection = initialize_search(clear=True)
-    results = search_instruments(query, collection)
+    # Initialize components
+    settings = Settings()
+    transformer = QueryTransformer(settings)
     
-    if not results['metadatas'][0]:
-        return html.Div("No results found")
+    # Transform query
+    es_query = transformer.transform(query)
+    query_str = json.dumps(es_query, indent=2)
     
-    return html.Div([
-        dbc.Card(
-            dbc.CardBody([
-                html.H4(metadata['name'], className="card-title"),
-                html.H6(f"Sector: {metadata['sector']}", className="card-subtitle mb-2 text-muted"),
-                dbc.Row([
-                    dbc.Col([
-                        html.P(f"Industry: {metadata['industry']}"),
-                        html.P(f"Size: {metadata['size']}"),
-                        html.P(f"Value/Growth: {metadata['value_growth']}")
-                    ], width=6),
-                    dbc.Col([
-                        html.P(f"ROE: {float(metadata['roe'])*100:.2f}%"),
-                        html.P(f"Dividend Yield: {float(metadata['dividend_yield'])*100:.2f}%"),
-                        html.P(f"P/E Ratio: {metadata['pe_ratio']}")
-                    ], width=6)
-                ])
-            ]),
-            className="mb-3"
-        )
-        for metadata in results['metadatas'][0]
-    ])
+    # Get results
+    results = send_to_elasticsearch(es_query)
+    
+    if results:
+        hits = results.get('hits', {}).get('hits', [])
+        
+        # Create results cards
+        results_cards = []
+        for hit in hits:
+            source = hit['_source']
+            card = dbc.Card(
+                dbc.CardBody([
+                    html.H5(source.get('name'), className="card-title"),
+                    html.H6(f"Score: {hit['_score']}", className="card-subtitle mb-2 text-muted"),
+                    dbc.Row([
+                        dbc.Col([
+                            html.P([
+                                html.Strong("Sector: "), 
+                                source.get('equity_sector')
+                            ]),
+                            html.P([
+                                html.Strong("ROE: "), 
+                                f"{source.get('roe_ttm', 0):.2%}"
+                            ]),
+                        ]),
+                        dbc.Col([
+                            html.P([
+                                html.Strong("Dividend Yield: "), 
+                                f"{source.get('div_yield_ttm', 0):.2%}"
+                            ]),
+                            html.P([
+                                html.Strong("P/E Ratio: "), 
+                                source.get('price_earnings_ex_extra_ttm')
+                            ]),
+                        ])
+                    ]),
+                    html.P(source.get('description', '')[:200] + "...")
+                ]),
+                className="mb-3"
+            )
+            results_cards.append(card)
+        
+        return query_str, html.Div(results_cards)
+    
+    return query_str, "No results found"
 
 if __name__ == '__main__':
     app.run_server(debug=True)
