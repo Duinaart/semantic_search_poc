@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Stock Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1A59AA;
+            --primary-dark: #134A96;
+            --secondary: #FF6C75;
+            --accent: #6366F1;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            --background: #FAFBFC;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-feature-settings: 'cv11', 'ss01';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 3rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, white 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* Search Section */
+        .search-section {
+            margin: -2rem auto 3rem;
+            position: relative;
+            z-index: 10;
+            max-width: 800px;
+        }
+
+        .search-container {
+            position: relative;
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-container:focus-within {
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            transform: translateY(-2px);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1.5rem 6rem 1.5rem 2rem;
+            border: none;
+            outline: none;
+            font-size: 1.1rem;
+            font-weight: 400;
+            background: transparent;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-button {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: var(--radius-lg);
+            padding: 0.875rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-button:hover {
+            transform: translateY(-50%) translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .search-button:active {
+            transform: translateY(-50%) translateY(0px);
+        }
+
+        .search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: translateY(-50%);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Results Section */
+        .results-section {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--surface) 0%, #F9FAFB 100%);
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-icon {
+            width: 2rem;
+            height: 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        /* Placeholder State */
+        .placeholder {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .placeholder-icon {
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .placeholder h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .placeholder p {
+            max-width: 320px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Stock Cards */
+        .results-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .stock-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stock-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.25rem;
+        }
+
+        .stock-info h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .stock-sector {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .relevance-score {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .metric-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .metric-icon.primary {
+            background: linear-gradient(135deg, #EBF3FE 0%, #DBEAFE 100%);
+            color: var(--primary);
+        }
+
+        .metric-icon.success {
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+            color: var(--success);
+        }
+
+        .metric-icon.warning {
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+            color: var(--warning);
+        }
+
+        .metric-icon.secondary {
+            background: linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%);
+            color: var(--secondary);
+        }
+
+        .metric-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.125rem;
+        }
+
+        .metric-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            truncate: true;
+        }
+
+        .metric-value.positive {
+            color: var(--success);
+        }
+
+        .metric-value.negative {
+            color: var(--error);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .query-display {
+            background: #F8F9FA;
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            overflow-x: auto;
+            max-height: 400px;
+            border: 1px solid var(--border);
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .loading-spinner {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error States */
+        .error {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--error);
+        }
+
+        .error-icon {
+            width: 3rem;
+            height: 3rem;
+            background: linear-gradient(135deg, #FEF2F2 0%, #FECACA 100%);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--error);
+            font-size: 1.25rem;
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .no-results-icon {
+            width: 3rem;
+            height: 3rem;
+            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 3rem 0;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+
+        .footer-logo {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .header p {
+                font-size: 1.125rem;
+            }
+
+            .search-input {
+                padding: 1.25rem 5rem 1.25rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            .search-button {
+                padding: 0.75rem 1.25rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .section-content {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Focus styles for accessibility */
+        .search-input:focus,
+        .search-button:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --border: #000000;
+                --text-secondary: #000000;
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1>Semantic Stock Search</h1>
+                <p>Find relevant stocks using natural language</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Search Section -->
+        <section class="search-section">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder='Try "European banks with high dividends" or "Tech companies with positive momentum"'
+                    aria-label="Search for stocks"
+                >
+                <button id="searchButton" class="search-button" aria-label="Search">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <div class="main-content">
+            <!-- Results Section -->
+            <section class="results-section">
+                <header class="section-header">
+                    <h2 class="section-title">
+                        <div class="section-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        Search Results
+                    </h2>
+                </header>
+                <div class="section-content">
+                    <div id="resultsContainer">
+                        <!-- Placeholder state -->
+                        <div class="placeholder">
+                            <div class="placeholder-icon">
+                                <i class="fas fa-search-dollar"></i>
+                            </div>
+                            <h3>Enter a query to find stocks</h3>
+                            <p>Use natural language to describe the stocks you're looking for</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <!-- Description Card -->
+                <div class="sidebar-card">
+                    <header class="section-header">
+                        <h3 class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-info"></i>
+                            </div>
+                            Query Description
+                        </h3>
+                    </header>
+                    <div class="section-content">
+                        <div id="descriptionContainer">
+                            <p class="placeholder">No description available</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Query Card -->
+                <div class="sidebar-card">
+                    <header class="section-header">
+                        <h3 class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            Elasticsearch Query
+                        </h3>
+                    </header>
+                    <div class="section-content">
+                        <div id="queryContainer">
+                            <div class="query-display">No query generated yet</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Semantic Stock Search powered by <span class="footer-logo">InvestSuite</span></p>
+            <p style="margin-top: 0.5rem; opacity: 0.7;">&copy; 2023 All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script>
+        class StockSearchApp {
+            constructor() {
+                this.searchInput = document.getElementById('searchInput');
+                this.searchButton = document.getElementById('searchButton');
+                this.resultsContainer = document.getElementById('resultsContainer');
+                this.descriptionContainer = document.getElementById('descriptionContainer');
+                this.queryContainer = document.getElementById('queryContainer');
+                
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                // Search button click
+                this.searchButton.addEventListener('click', () => this.performSearch());
+                
+                // Enter key press
+                this.searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.performSearch();
+                    }
+                });
+
+                // Input focus effects
+                this.searchInput.addEventListener('focus', () => {
+                    this.searchInput.parentElement.style.transform = 'translateY(-2px)';
+                });
+
+                this.searchInput.addEventListener('blur', () => {
+                    this.searchInput.parentElement.style.transform = 'translateY(0)';
+                });
+            }
+
+            async performSearch() {
+                const query = this.searchInput.value.trim();
+                
+                if (!query) {
+                    this.showError('Please enter a search query');
+                    return;
+                }
+
+                // Show loading state
+                this.showLoading();
+                this.setButtonLoading(true);
+
+                try {
+                    const response = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ query }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.displayResults(data);
+                } catch (error) {
+                    console.error('Search error:', error);
+                    this.showError('Failed to search. Please try again.');
+                } finally {
+                    this.setButtonLoading(false);
+                }
+            }
+
+            showLoading() {
+                this.resultsContainer.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Processing your query...</div>
+                    </div>
+                `;
+            }
+
+            setButtonLoading(loading) {
+                this.searchButton.disabled = loading;
+                if (loading) {
+                    this.searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Searching...</span>';
+                } else {
+                    this.searchButton.innerHTML = '<i class="fas fa-search"></i><span>Search</span>';
+                }
+            }
+
+            displayResults(data) {
+                // Update description
+                this.descriptionContainer.innerHTML = `<p>${data.description || 'No description available'}</p>`;
+
+                // Update query display
+                if (data.query) {
+                    this.queryContainer.innerHTML = `
+                        <div class="query-display">${JSON.stringify(data.query, null, 2)}</div>
+                    `;
+                } else {
+                    this.queryContainer.innerHTML = `
+                        <div class="query-display">No Elasticsearch query generated</div>
+                    `;
+                }
+
+                // Update results
+                if (data.results && data.results.length > 0) {
+                    this.displayStockResults(data.results);
+                } else {
+                    this.showNoResults();
+                }
+            }
+
+            displayStockResults(results) {
+                const resultsHTML = results.map((stock, index) => {
+                    const roe = stock.roe_ttm;
+                    const divYield = stock.div_yield_ttm;
+                    
+                    return `
+                        <div class="stock-card slide-up" style="animation-delay: ${index * 0.1}s">
+                            <div class="stock-header">
+                                <div class="stock-info">
+                                    <h4>${stock.name}</h4>
+                                    <div class="stock-sector">${stock.sector}</div>
+                                </div>
+                                <div class="relevance-score">
+                                    ${stock.score.toFixed(2)}
+                                    <i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="metrics-grid">
+                                <div class="metric">
+                                    <div class="metric-icon primary">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">Return on Equity</div>
+                                        <div class="metric-value ${roe > 0 ? 'positive' : 'negative'}">
+                                            ${roe ? (roe * 100).toFixed(1) + '%' : 'N/A'}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metric">
+                                    <div class="metric-icon warning">
+                                        <i class="fas fa-coins"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">Dividend Yield</div>
+                                        <div class="metric-value ${divYield > 0 ? 'positive' : ''}">
+                                            ${divYield ? (divYield * 100).toFixed(1) + '%' : 'N/A'}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metric">
+                                    <div class="metric-icon success">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">Industry</div>
+                                        <div class="metric-value">${stock.industry || 'N/A'}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metric">
+                                    <div class="metric-icon secondary">
+                                        <i class="fas fa-tag"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">ISIN</div>
+                                        <div class="metric-value">${stock.isin || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                this.resultsContainer.innerHTML = `
+                    <div class="results-grid fade-in">
+                        ${resultsHTML}
+                    </div>
+                `;
+            }
+
+            showNoResults() {
+                this.resultsContainer.innerHTML = `
+                    <div class="no-results fade-in">
+                        <div class="no-results-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3>No stocks found</h3>
+                        <p>Try adjusting your search query to find more results</p>
+                    </div>
+                `;
+            }
+
+            showError(message) {
+                this.resultsContainer.innerHTML = `
+                    <div class="error fade-in">
+                        <div class="error-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h3>Error</h3>
+                        <p>${message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize the app when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new StockSearchApp();
+        });
+
+        // Add some example queries on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const examples = [
+                'European banks with high dividends',
+                'Tech companies with positive momentum',
+                'Large growth companies in Technology sector',
+                'Companies with high profitability stars',
+                'Small value stocks with low debt'
+            ];
+            
+            let currentExample = 0;
+            
+            // Cycle through examples as placeholder text
+            setInterval(() => {
+                if (searchInput.value === '' && document.activeElement !== searchInput) {
+                    searchInput.placeholder = `Try "${examples[currentExample]}"`;
+                    currentExample = (currentExample + 1) % examples.length;
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

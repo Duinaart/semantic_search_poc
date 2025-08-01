@@ -164,9 +164,9 @@ class QueryTransformer:
                         "query": {{
                             "bool": {{
                                 "must": [
-                                    {{"term": {{"currency": "EUR"}}}},
-                                    {{"term": {{"equity_industry": "Banks"}}}},
-                                    {{"range": {{"div_yield_ttm.float": {{"gt": 0.03}}}}}}
+                                    {{"term": {{"currency.keyword": "EUR"}}}},
+                                    {{"term": {{"equity_industry.keyword": "Banks"}}}},
+                                    {{"range": {{"div_yield_ttm": {{"gt": 0.03}}}}}}
                                 ]
                             }}
                         }}
@@ -176,9 +176,9 @@ class QueryTransformer:
                         "query": {{
                             "bool": {{
                                 "must": [
-                                    {{"term": {{"size_label": "LARGE"}}}}
-                                    {{"term": {{"value_growth_label": "GROWTH"}}}},
-                                    {{"term": {{"equity_sector": "TECHNOLOGY"}}}},
+                                    {{"term": {{"size_label.keyword": "LARGE"}}}},
+                                    {{"term": {{"value_growth_label.keyword": "GROWTH"}}}},
+                                    {{"term": {{"equity_sector.keyword": "TECHNOLOGY"}}}},
                                 ]
                             }}
                         }}

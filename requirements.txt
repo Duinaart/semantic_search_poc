@@ -1,7 +1,7 @@
-dash
-flask
-werkzeug
-click>=8.0
-markupsafe
-python-dotenv
-requests
+flask==3.0.0
+flask-cors==4.0.0
+python-dotenv==1.0.0
+requests==2.31.0
+openai==1.98.0
+pydantic==2.8.2
+typing-extensions==4.12.2

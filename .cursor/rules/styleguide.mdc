@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- [styleguide IVS.pdf](mdc:styleguide IVS.pdf) follow these icons styleguide rules when building front end

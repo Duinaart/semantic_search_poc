@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def send_to_elasticsearch(query: dict) -> dict:
-    ES_URL = "https://localhost:9200/stocks/_search"
+    ES_URL = "http://localhost:9200/stocks/_search"
     USERNAME = "elastic"
     PASSWORD = os.getenv('ELASTICSEARCH_PASSWORD')  # Replace or use env var
     
