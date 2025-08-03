@@ -5,6 +5,7 @@ from query_transformer import QueryTransformer, Settings
 import json
 import os
 from dotenv import load_dotenv
+from performance_tracer import trace_operation
 
 load_dotenv()
 
@@ -13,16 +14,31 @@ def send_to_elasticsearch(query: dict) -> dict:
     USERNAME = "elastic"
     PASSWORD = os.getenv('ELASTICSEARCH_PASSWORD')  # Replace or use env var
     
+    with trace_operation("elasticsearch_request_preparation", 
+                       query_size=len(json.dumps(query)),
+                       query_type=list(query.get('query', {}).keys())):
+        # Prepare request components
+        auth = HTTPBasicAuth(USERNAME, PASSWORD)
+        headers = {'Content-Type': 'application/json'}
+    
     try:
-        response = requests.post(
-            ES_URL,
-            json=query,
-            auth=HTTPBasicAuth(USERNAME, PASSWORD),
-            verify=False,
-            headers={'Content-Type': 'application/json'}
-        )
-        response.raise_for_status()
-        return response.json()
+        with trace_operation("elasticsearch_http_request",
+                           url=ES_URL,
+                           query_complexity=len(str(query))):
+            response = requests.post(
+                ES_URL,
+                json=query,
+                auth=auth,
+                verify=False,
+                headers=headers
+            )
+            response.raise_for_status()
+        
+        with trace_operation("elasticsearch_response_parsing",
+                           status_code=response.status_code,
+                           response_size=len(response.content)):
+            return response.json()
+            
     except Exception as e:
         print(f"Error querying Elasticsearch: {e}")
         return None

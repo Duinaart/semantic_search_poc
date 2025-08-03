@@ -385,6 +385,119 @@
             color: var(--error);
         }
 
+        /* Tabs */
+        .tabs {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-nav {
+            display: flex;
+            background: linear-gradient(135deg, var(--surface) 0%, #F9FAFB 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 -2px 0 var(--primary);
+        }
+
+        .tab-button:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Performance Metrics */
+        .performance-section {
+            margin-bottom: 2rem;
+        }
+
+        .performance-summary {
+            background: linear-gradient(135deg, #EBF3FE 0%, #DBEAFE 100%);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #BFDBFE;
+        }
+
+        .performance-total {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .performance-total-time {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .performance-total-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .performance-breakdown {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .performance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+
+        .performance-operation {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .performance-time {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .performance-percentage {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-left: 0.5rem;
+        }
+
         /* Sidebar */
         .sidebar {
             display: flex;
@@ -619,10 +732,51 @@
             </div>
         </section>
 
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <div class="tab-nav">
+                <button class="tab-button active" data-tab="search">
+                    <i class="fas fa-search"></i>
+                    Search Results
+                </button>
+                <button class="tab-button" data-tab="dev">
+                    <i class="fas fa-code"></i>
+                    Developer
+                </button>
+            </div>
+            
+            <!-- Search Tab Content -->
+            <div class="tab-content active" id="search-tab">
+                <div id="resultsContainer">
+                    <!-- Placeholder state -->
+                    <div class="placeholder">
+                        <div class="placeholder-icon">
+                            <i class="fas fa-search-dollar"></i>
+                        </div>
+                        <h3>Enter a query to find stocks</h3>
+                        <p>Use natural language to describe the stocks you're looking for</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dev Tab Content -->
+            <div class="tab-content" id="dev-tab">
+                <div id="devContainer">
+                    <div class="placeholder">
+                        <div class="placeholder-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3>No performance data available</h3>
+                        <p>Run a search to see performance metrics and query details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content Grid -->
         <div class="main-content">
-            <!-- Results Section -->
-            <section class="results-section">
+            <!-- Results Section (now hidden, content moved to tabs) -->
+            <section class="results-section" style="display: none;">
                 <header class="section-header">
                     <h2 class="section-title">
                         <div class="section-icon">
@@ -632,15 +786,8 @@
                     </h2>
                 </header>
                 <div class="section-content">
-                    <div id="resultsContainer">
-                        <!-- Placeholder state -->
-                        <div class="placeholder">
-                            <div class="placeholder-icon">
-                                <i class="fas fa-search-dollar"></i>
-                            </div>
-                            <h3>Enter a query to find stocks</h3>
-                            <p>Use natural language to describe the stocks you're looking for</p>
-                        </div>
+                    <div id="oldResultsContainer">
+                        <!-- Moved to tabs above -->
                     </div>
                 </div>
             </section>
@@ -700,8 +847,11 @@
                 this.resultsContainer = document.getElementById('resultsContainer');
                 this.descriptionContainer = document.getElementById('descriptionContainer');
                 this.queryContainer = document.getElementById('queryContainer');
+                this.devContainer = document.getElementById('devContainer');
+                this.currentPerformanceData = null;
                 
                 this.initEventListeners();
+                this.initTabs();
             }
 
             initEventListeners() {
@@ -722,6 +872,23 @@
 
                 this.searchInput.addEventListener('blur', () => {
                     this.searchInput.parentElement.style.transform = 'translateY(0)';
+                });
+            }
+
+            initTabs() {
+                // Tab switching
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const tabName = button.getAttribute('data-tab');
+                        
+                        // Update tab buttons
+                        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        // Update tab content
+                        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                        document.getElementById(`${tabName}-tab`).classList.add('active');
+                    });
                 });
             }
 
@@ -779,6 +946,9 @@
             }
 
             displayResults(data) {
+                // Store performance data
+                this.currentPerformanceData = data.performance;
+
                 // Update description
                 this.descriptionContainer.innerHTML = `<p>${data.description || 'No description available'}</p>`;
 
@@ -793,12 +963,95 @@
                     `;
                 }
 
+                // Update dev tab with performance data
+                this.updateDevTab(data);
+
                 // Update results
                 if (data.results && data.results.length > 0) {
                     this.displayStockResults(data.results);
                 } else {
                     this.showNoResults();
                 }
+            }
+
+            updateDevTab(data) {
+                const performance = data.performance;
+                
+                if (!performance) {
+                    this.devContainer.innerHTML = `
+                        <div class="placeholder">
+                            <div class="placeholder-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <h3>No performance data</h3>
+                            <p>Performance data not available for this request</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Create performance breakdown
+                const breakdown = performance.breakdown || {};
+                const totalTime = performance.total_duration_ms || 0;
+
+                const breakdownItems = Object.entries(breakdown)
+                    .sort(([,a], [,b]) => b - a) // Sort by duration desc
+                    .map(([operation, duration]) => {
+                        const percentage = totalTime > 0 ? (duration / totalTime * 100).toFixed(1) : 0;
+                        return `
+                            <div class="performance-item">
+                                <span class="performance-operation">${operation.replace(/_/g, ' ')}</span>
+                                <div>
+                                    <span class="performance-time">${duration.toFixed(1)}ms</span>
+                                    <span class="performance-percentage">(${percentage}%)</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                this.devContainer.innerHTML = `
+                    <div class="performance-section">
+                        <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-weight: 600;">
+                            <i class="fas fa-stopwatch" style="margin-right: 0.5rem;"></i>
+                            Performance Metrics
+                        </h3>
+                        
+                        <div class="performance-summary">
+                            <div class="performance-total">
+                                <div class="performance-total-time">${totalTime.toFixed(0)}ms</div>
+                                <div class="performance-total-label">Total Response Time</div>
+                            </div>
+                            
+                            <div class="performance-breakdown">
+                                ${breakdownItems}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="performance-section">
+                        <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-weight: 600;">
+                            <i class="fas fa-database" style="margin-right: 0.5rem;"></i>
+                            Elasticsearch Query
+                        </h3>
+                        
+                        <div class="query-display">
+                            ${data.query ? JSON.stringify(data.query, null, 2) : 'No query generated'}
+                        </div>
+                    </div>
+
+                    <div class="performance-section">
+                        <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-weight: 600;">
+                            <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+                            Request Details
+                        </h3>
+                        
+                        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem;">
+                            <div style="margin-bottom: 0.5rem;"><strong>Request ID:</strong> ${performance.request_id || 'N/A'}</div>
+                            <div style="margin-bottom: 0.5rem;"><strong>Operations:</strong> ${Object.keys(breakdown).length}</div>
+                            <div><strong>Results Found:</strong> ${data.results ? data.results.length : 0}</div>
+                        </div>
+                    </div>
+                `;
             }
 
             displayStockResults(results) {
@@ -814,7 +1067,7 @@
                                     <div class="stock-sector">${stock.sector}</div>
                                 </div>
                                 <div class="relevance-score">
-                                    ${stock.score.toFixed(2)}
+                                    ${stock.score ? stock.score.toFixed(2) : 'N/A'}
                                     <i class="fas fa-star"></i>
                                 </div>
                             </div>
